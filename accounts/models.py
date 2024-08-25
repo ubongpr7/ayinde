@@ -55,6 +55,8 @@ class Faculty(models.Model):
         help_text='Enter the name of  deartment'
     )
 
+    def __str__(self):
+        return self.name
 class Department(models.Model):
     name=models.CharField(
         max_length=50,
@@ -69,15 +71,18 @@ class Department(models.Model):
         null=True,
         related_name='departments'
     )
-
+    def __str__(self):
+        return self.name
 class Profile(models.Model):
     user= models.OneToOneField(
         user_model,
         on_delete=models.CASCADE,
         null=False,
         blank=False,
-        editable=False
+        editable=False,
+        related_name='+'
     )
+    
 
     department=models.ForeignKey(
         Department,
@@ -87,6 +92,11 @@ class Profile(models.Model):
         on_delete=models.SET_NULL
 
     )
+    def __str__(self):
+        if self.user.first_name:
+            return f'{self.user.first_name} {self.user.last_name}'
+        return f'{self.user.email}'
+        
     
 
     class Meta:
@@ -106,7 +116,7 @@ class StudentProfile(Profile):
         )
     
     
-    year_of_grad=models.DateField(
+    graduation_year=models.DateField(
         verbose_name='Year of graduation',
         help_text='Choose estimated year of graduation',
         null=True,
