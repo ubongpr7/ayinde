@@ -1,8 +1,23 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser,BaseUserManager
 # Create your models here.
 from django.conf import settings
 user_model=settings.AUTH_USER_MODEL
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
 
 class User(AbstractUser):
     email= models.EmailField(
@@ -14,8 +29,36 @@ class User(AbstractUser):
     is_lecturer= models.BooleanField(default=False,null=True)
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS=[]
+    objects=CustomUserManager()
+    
+    def save(self, *args, **kwargs):
+        self.username=self.email
+
+        super().save(*args, **kwargs)
 
 
+class Faculty(models.Model):
+    name=models.CharField(
+        max_length=50,
+        blank=False,
+        null=False,
+        help_text='Enter the name of  deartment'
+    )
+
+class Department(models.Model):
+    name=models.CharField(
+        max_length=50,
+        blank=False,
+        null=False,
+        help_text='Enter the name of  deartment'
+    )
+    faculty=models.ForeignKey(
+        Faculty,
+        on_delete=models.SET_NULL,
+        blank=False,
+        null=True,
+        related_name='departments'
+    )
 
 class Profile(models.Model):
     user= models.OneToOneField(
@@ -26,18 +69,15 @@ class Profile(models.Model):
         editable=False
     )
 
-    department=models.CharField(
-        max_length=50,
+    department=models.ForeignKey(
+        Department,
         blank=False,
-        null=False,
-        help_text='Enter the name of your department'
+        null=True,
+        help_text='Choose your department',
+        on_delete=models.SET_NULL
+
     )
-    faculty=models.CharField(
-        max_length=50,
-        blank=False,
-        null=False,
-        verbose_name='School or Faculty'
-    )
+    
 
     class Meta:
         abstract=True
