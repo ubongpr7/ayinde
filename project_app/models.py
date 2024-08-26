@@ -9,7 +9,7 @@ from accounts.models import LecturerProfile, StudentProfile
 class Project(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    document = models.FileField(upload_to='projects/documents/')
+    document = models.FileField(upload_to='projects/documents//%y/%m/%d/')
     student = models.ForeignKey(StudentProfile,editable=False, null=True,on_delete=models.CASCADE, related_name='projects')
     submitted_at = models.DateTimeField(auto_now_add=True)
     supervisors=models.ManyToManyField(
@@ -20,8 +20,6 @@ class Project(models.Model):
     )
     def __str__(self):
         return f"{self.title}- {self.student.matric_number}"
-
-
 
 class Comment(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='comments')
