@@ -84,9 +84,11 @@ def register(request):
             # UserProfile.objects.create(user=user, role=role)
             if role=='student':
                 user.is_student=True
+                user.is_lecturer=False
                 user.save()
                 return redirect(f'/accounts/create-profile/{user.id}/student')
             if role=='lecturer':
+                user.is_student=False
                 user.is_lecturer=True
                 user.save()
                 return redirect(f'/accounts/create-profile/{user.id}/lecturer')

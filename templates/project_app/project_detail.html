@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load bootstrap5 %}
 {% block content %}
   <div class="container">
     <h2>{{ project.title }}</h2>
@@ -21,10 +21,12 @@
     {% endfor %}
 
     <h3>Add a Comment</h3>
+    {% if user.lecturerprofile in project.supervisors.all %}
+
     <form method="post">
       {% csrf_token %}
-      {% botstrap_form comment_form.as_p %}
-      <button type="submit" name="comment_submit">Add Comment</button>
+      {% botstrap_form comment_form %}
+      <button class="btn btn-secondary" type="submit" name="comment_submit">Add Comment</button>
     </form>
 
     {% if user.lecturerprofile in project.supervisors.all %}
@@ -35,8 +37,8 @@
       {% else %}
         <form method="post">
           {% csrf_token %}
-          {{ grade_form.as_p }}
-          <button type="submit" name="grade_submit">Submit Grade</button>
+          {% bootstrap_form grade_form%}
+          <button type="submit"class="btn btn-primary" name="grade_submit">Submit Grade</button>
         </form>
       {% endif %}
     {% endif %}

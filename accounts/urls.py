@@ -7,6 +7,7 @@ urlpatterns=[
     path('register/',register,name='register' ),
     path('create-profile/<str:id>/<str:role>/', create_profile, name='create_profile'),
     path('login/', user_login, name='login'),
+    
 ]
 
 # path(route,view=, name=)

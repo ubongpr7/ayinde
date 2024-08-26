@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView
 from django.forms import modelform_factory
 from django.apps import apps
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 
@@ -76,12 +76,14 @@ class CommentGradeCreateView(CreateView,LoginRequiredMixin):
             project=get_object_or_404( Project,id=self.kwargs['project_id'])
             if self.request.user.is_lecturer:
                 print(self.request.user.lecturerprofile)
-                if self.request.user.lecturerprofile and self.kwargs['model_name'] in ['comment','grade']  :
-                
-                    form.instance.supervisor = self.request.user.lecturerprofile
-                    form.instance.project = project
-                    context = self.get_context_data(form=form)
-                    response = super().form_valid(form)
+                if hasattr(self.request.user ,'lecturerprofile' ) and self.kwargs['model_name'] in ['comment','grade']  :
+                    if self.request.user.lecturerprofile in project.supervisors.all():
+                        form.instance.supervisor = self.request.user.lecturerprofile
+                        form.instance.project = project
+                        context = self.get_context_data(form=form)
+                        response = super().form_valid(form)
+                    else:
+                        return HttpResponseForbidden("You do not have permission to Comment to this project")
                     
                 else:
                     return redirect('/')
@@ -99,6 +101,60 @@ class CommentGradeCreateView(CreateView,LoginRequiredMixin):
         context['model_name'] =self.kwargs['model_name']
         context['app_name'] =self.kwargs['app_name']
         return context
+
+
+class GenericListView(ListView,LoginRequiredMixin):
+    paginate_by = 10
+    context_object_name = 'items'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = self.request.GET.get('page', 1)
+        context['page_obj'] = context['paginator'].get_page(page)
+        context['base_url'] = f'/list/{self.kwargs["app_name"]}/{self.kwargs["model_name"]}'
+        context['app_name']=self.kwargs['app_name']
+        context['model_name']=self.kwargs['model_name']
+        context['title']=self.kwargs['model_name'].title()
+        return context
+
+    def get_template_names(self):
+        # if hasattr(self.request, 'htmx') and self.request.htmx:
+            # return [list.html']
+        return ['list.html']
+
+    def get_queryset(self):
+        model = self.get_model()
+        queryset = model.objects.all()
+        return queryset
+
+    def get_model(self):
+        model_name = self.kwargs['model_name']
+        app_name = self.kwargs['app_name']
+        model = apps.get_model(app_name, model_name)
+        print(f"Retrieved model: {model}")  # Debugging line
+        return model
+
+@login_required
+def dynamic_delete(request, app_name, model_name, pk):
+
+    model = apps.get_model(app_name, model_name)
+    obj = model.objects.get(pk=pk)
+
+    if request.method == 'POST':
+        obj.delete()
+        return HttpResponse('<div hx-swap-oob="true" id="success-message">Item deleted Successfully</div>')
+    
+    del_url = f'/delete/{app_name}/{model_name}/{pk}/'
+    context = {
+        "obj": obj,
+        'del_url': del_url,
+        "app_label": app_name,
+        "model_label": model_name,
+        'pk': pk
+    }
+    return render(request, 'confirm_delete.html', context)
+
+
 
 @login_required
 def create_or_update_project(request, project_id=None):
@@ -145,21 +201,31 @@ class ProjectDetailView(FormMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['comment_form'] = CommentForm()
         context['grade_form'] = GradeForm()
+        context['title'] = self.object.title
         context['comments'] = Comment.objects.filter(project=self.object)
         context['grade'] = Grade.objects.filter(project=self.object).first()
+
+
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if 'comment_submit' in request.POST:
-            return self.handle_comment_form(request)
-        elif 'grade_submit' in request.POST:
-            return self.handle_grade_form(request)
-        return super().post(request, *args, **kwargs)
+        if hasattr(request.user,'lecturerprofile'):
+
+            if 'comment_submit' in request.POST:
+                return self.handle_comment_form(request)
+            elif 'grade_submit' in request.POST:
+                return self.handle_grade_form(request)
+            return super().post(request, *args, **kwargs)
+        messages.error(request,'You do not have permission to comment on this project')
+        
+        return redirect('project_detail', pk=self.object.pk)
 
     def handle_comment_form(self, request):
         form = CommentForm(request.POST)
+            
         if form.is_valid():
+
             comment = form.save(commit=False)
             comment.project = self.object
             comment.supervisor = request.user.lecturerprofile 
