@@ -36,6 +36,7 @@ class User(AbstractUser):
 
         super().save(*args, **kwargs)
 
+
 class UserProfile(models.Model):
     ROLE_CHOICES = (
         ('student', 'Student'),
@@ -47,6 +48,7 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
 class Faculty(models.Model):
     name=models.CharField(
         max_length=50,
@@ -57,6 +59,7 @@ class Faculty(models.Model):
 
     def __str__(self):
         return self.name
+
 class Department(models.Model):
     name=models.CharField(
         max_length=50,
@@ -73,6 +76,7 @@ class Department(models.Model):
     )
     def __str__(self):
         return self.name
+
 class Profile(models.Model):
     user= models.OneToOneField(
         user_model,
@@ -80,7 +84,6 @@ class Profile(models.Model):
         null=False,
         blank=False,
         editable=False,
-        related_name='+'
     )
     
 

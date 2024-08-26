@@ -60,7 +60,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body p-5">
                         <h2 class="text-center mb-4">{{ title }}</h2>
-                        <form method="post" action=".">
+                        <form method="post" action="." enctype="multipart/form-data">
                             {% csrf_token %}
                             {% for field in form %}
                             <div class="mb-3">

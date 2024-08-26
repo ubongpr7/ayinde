@@ -73,6 +73,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             role = form.cleaned_data.get('role')
+            
             username = form.cleaned_data['email']
             password = form.cleaned_data['password1']
             # Create the UserProfile with the selected role
@@ -80,11 +81,14 @@ def register(request):
             user = authenticate(request, username=username, password=password)
 
             messages.success(request, "Registration successful.")
-            UserProfile.objects.create(user=user, role=role)
+            # UserProfile.objects.create(user=user, role=role)
             if role=='student':
-                
+                user.is_student=True
+                user.save()
                 return redirect(f'/accounts/create-profile/{user.id}/student')
             if role=='lecturer':
+                user.is_lecturer=True
+                user.save()
                 return redirect(f'/accounts/create-profile/{user.id}/lecturer')
 
             return redirect('/')
