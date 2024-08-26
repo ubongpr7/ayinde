@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.contrib.auth import login,authenticate
+from django.contrib.auth import login,authenticate,logout
 from django.contrib import messages
 from accounts.models import LecturerProfile, UserProfile
 from .forms import LecturerForm, LoginForm, RegistrationForm, StudentForm
@@ -66,6 +66,11 @@ def user_login(request):
 
     return render(request, 'create.html', {'form': form,'title':title})
 
+def signout(request):
+    logout(request)
+    messages.success(request,'Logout Successful')
+    return redirect('/')
+    
 def register(request):
     form =RegistrationForm()
     if request.method =='POST':
